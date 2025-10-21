@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Código DUN-14</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen py-2 px-4">
+
+    <div class="w-full max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 space-y-2">
+        <div class="flex justify-center mb-4">
+            <img src="logo.png" alt="Logo da Empresa" class="w-48"> 
+        </div>
+
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Gerador DUN-14</h1>
+            <p class="text-gray-500 mt-2">Converta seu código EAN-13 para o padrão DUN-14 facilmente.</p>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex-grow">
+                <label for="variant" class="block text-sm font-medium text-gray-700">Variante Logística (1 a 8)</label>
+                <p class="text-xs text-gray-500">Selecione a variante que será usada para ambas as conversões.</p>
+            </div>
+            <div class="w-full md:w-auto md:min-w-[200px]"> <select id="variant" name="variant" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="border border-gray-200 rounded-lg p-4 space-y-2 flex flex-col">
+                <h2 class="text-xl font-semibold text-gray-700 text-center">Conversão Individual</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="ean13" class="block text-sm font-medium text-gray-700 mb-1">Código EAN-13 (13 dígitos)</label>
+                        <input type="text" id="ean13" name="ean13" maxlength="13" placeholder="Ex: 7891000315504" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                    </div>
+                    </div>
+
+                <div>
+                    <button id="generate-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all transform hover:scale-105">
+                        Gerar Código DUN-14
+                    </button>
+                </div>
+                
+                <div id="error-message" class="text-red-600 text-center font-medium h-5"></div>
+
+                <div id="result-container" class="text-center bg-gray-50 p-6 rounded-lg border border-gray-200 hidden mt-auto">
+                    <h2 class="text-lg font-semibold text-gray-600">Seu código DUN-14 é:</h2>
+                    <p id="result-code" class="text-4xl font-bold text-gray-900 mt-2 tracking-wider"></p>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4 space-y-2 flex flex-col">
+                <h2 class="text-xl font-semibold text-gray-700 text-center">Conversão em Lote (CSV)</h2>
+                <p class="text-center text-sm text-gray-500">
+                    Suba uma planilha .csv com uma coluna chamada "ean13". A variante logística selecionada acima será usada para todos os códigos.
+                </p>
+                
+                <div>
+                    <button id="download-template-btn" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all">
+                        Baixar Modelo CSV
+                    </button>
+                </div>
+
+                <div>
+                    <label for="csv-file" class="block text-sm font-medium text-gray-700 mb-1">Selecione o arquivo .csv</label>
+                    <input type="file" id="csv-file" accept=".csv" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+
+                <div>
+                    <button id="process-csv-btn" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all transform hover:scale-105">
+                        Processar Planilha e Baixar Resultado
+                    </button>
+                </div>
+
+                <div id="csv-status-message" class="text-blue-600 text-center font-medium h-5 mt-auto pt-4"></div>
+            </div>
+        
+        </div> </div> <script>
+        // --- Elementos da Conversão Individual ---
+        const ean13Input = document.getElementById('ean13');
+        // *** MODIFICADO ***: Pega a variante do novo local
+        const variantSelect = document.getElementById('variant'); 
+        const generateBtn = document.getElementById('generate-btn');
+        const errorMessageDiv = document.getElementById('error-message');
+        const resultContainer = document.getElementById('result-container');
+        const resultCodeP = document.getElementById('result-code');
+
+        // --- Elementos do Processamento em Lote ---
+        const downloadTemplateBtn = document.getElementById('download-template-btn');
+        const csvFileInput = document.getElementById('csv-file');
+        const processCsvBtn = document.getElementById('process-csv-btn');
+        const csvStatusMessageDiv = document.getElementById('csv-status-message');
+
+        // --- Lógica Comum ---
+
+        // Função para calcular o dígito verificador padrão GS1
+        function calculateCheckDigit(baseCode) {
+            let sumOdd = 0;
+            let sumEven = 0;
+            for (let i = 0; i < baseCode.length; i++) {
+                const digit = parseInt(baseCode[i]);
+                if ((i + 1) % 2 !== 0) { // Posição ímpar (1, 3, 5, etc.)
+                    sumOdd += digit;
+                } else { // Posição par (2, 4, 6, etc.)
+                    sumEven += digit;
+                }
+            }
+            const total = (sumOdd * 3) + sumEven;
+            const checkDigit = (10 - (total % 10)) % 10;
+            return checkDigit;
+        }
+
+        // Função para gerar um único DUN-14 a partir de um EAN-13
+        function getDun14FromEan13(ean13, logisticVariant) {
+             // Validação do EAN-13
+            if (!/^\d{13}$/.test(ean13)) {
+                return null; // Retorna null se for inválido
+            }
+            const ean12 = ean13.substring(0, 12);
+            const baseDun13 = logisticVariant + ean12;
+            const checkDigit = calculateCheckDigit(baseDun13);
+            return baseDun13 + checkDigit;
+        }
+        
+        // --- Lógica da Conversão Individual ---
+        function generateSingleDun14() {
+            errorMessageDiv.textContent = '';
+            resultContainer.classList.add('hidden');
+            const ean13 = ean13Input.value.trim();
+            const logisticVariant = variantSelect.value;
+            const dun14 = getDun14FromEan13(ean13, logisticVariant);
+
+            if (dun14) {
+                resultCodeP.textContent = dun14;
+                resultContainer.classList.remove('hidden');
+            } else {
+                errorMessageDiv.textContent = 'O código EAN-13 deve ter 13 dígitos numéricos.';
+            }
+        }
+
+        generateBtn.addEventListener('click', generateSingleDun14);
+        ean13Input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                generateSingleDun14();
+            }
+        });
+
+        // --- Lógica do Processamento em Lote ---
+
+        // Função para baixar o arquivo de modelo
+        function downloadTemplate() {
+            const csvContent = "ean13\n7891000315504\n7891234567890\n";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "modelo_dun14.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        downloadTemplateBtn.addEventListener('click', downloadTemplate);
+
+        // Função para processar o arquivo CSV (Usando ; como separador de saída)
+        function processCsvFile() {
+            csvStatusMessageDiv.textContent = '';
+            const file = csvFileInput.files[0];
+
+            if (!file) {
+                csvStatusMessageDiv.textContent = 'Por favor, selecione um arquivo.';
+                return;
+            }
+
+            csvStatusMessageDiv.textContent = 'Processando...';
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                const lines = csvData.split(/\r\n|\n/);
+                
+                // O arquivo de entrada ainda usa vírgula
+                const header = lines[0].split(',').map(h => h.trim());
+                const eanIndex = header.findIndex(h => h.toLowerCase() === 'ean13');
+
+                if (eanIndex === -1) {
+                    csvStatusMessageDiv.textContent = 'Erro: A coluna "ean13" não foi encontrada.';
+                    return;
+                }
+
+                const logisticVariant = variantSelect.value;
+                
+                // O arquivo de saída usará PONTO E VÍRGULA (;)
+                let resultCsvContent = 'ean13;dun14\n';
+                
+                let processedCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        // A leitura da linha de entrada ainda usa vírgula
+                        const columns = line.split(','); 
+                        const ean13 = columns[eanIndex] ? columns[eanIndex].trim() : '';
+                        const dun14 = getDun14FromEan13(ean13, logisticVariant);
+                        
+                        // A escrita da linha de saída usa PONTO E VÍRGULA (;)
+                        resultCsvContent += `${ean13};${dun14 || 'EAN Inválido'}\n`;
+                        processedCount++;
+                    }
+                }
+                
+                if (processedCount === 0) {
+                     csvStatusMessageDiv.textContent = 'Nenhum EAN válido encontrado no arquivo.';
+                     return;
+                }
+
+                // Dispara o download do resultado
+                const blob = new Blob([resultCsvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "resultado_dun14.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                csvStatusMessageDiv.textContent = `${processedCount} códigos processados com sucesso!`;
+            };
+
+            reader.onerror = function() {
+                csvStatusMessageDiv.textContent = 'Erro ao ler o arquivo.';
+            };
+            
+            reader.readAsText(file);
+        }
+
+        processCsvBtn.addEventListener('click', processCsvFile);
+
+    </script>
+</body>
+</html>
